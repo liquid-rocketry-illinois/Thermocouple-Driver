@@ -58,6 +58,13 @@ static void MX_GPIO_Init(void);
 static void MX_I2C1_Init(void);
 static void MX_USART3_UART_Init(void);
 /* USER CODE BEGIN PFP */
+int __io_putchar(int cha)
+{
+    unsigned char ch = cha;
+    HAL_UART_Transmit(&huart3, &ch, 1, HAL_MAX_DELAY);
+    return cha;
+    // HAL_UART_Transmit(&hu)
+}
 
 /* USER CODE END PFP */
 
@@ -72,298 +79,299 @@ static void MX_USART3_UART_Init(void);
   */
 int main(void)
 {
+    /* USER CODE BEGIN 1 */
 
-  /* USER CODE BEGIN 1 */
+    /* USER CODE END 1 */
 
-  /* USER CODE END 1 */
+    /* MPU Configuration--------------------------------------------------------*/
+    MPU_Config();
 
-  /* MPU Configuration--------------------------------------------------------*/
-  MPU_Config();
+    /* MCU Configuration--------------------------------------------------------*/
 
-  /* MCU Configuration--------------------------------------------------------*/
+    /* Reset of all peripherals, Initializes the Flash interface and the Systick. */
+    HAL_Init();
 
-  /* Reset of all peripherals, Initializes the Flash interface and the Systick. */
-  HAL_Init();
+    /* USER CODE BEGIN Init */
 
-  /* USER CODE BEGIN Init */
+    /* USER CODE END Init */
 
-  /* USER CODE END Init */
+    /* Configure the system clock */
+    SystemClock_Config();
 
-  /* Configure the system clock */
-  SystemClock_Config();
+    /* USER CODE BEGIN SysInit */
 
-  /* USER CODE BEGIN SysInit */
+    /* USER CODE END SysInit */
 
-  /* USER CODE END SysInit */
+    /* Initialize all configured peripherals */
+    MX_GPIO_Init();
+    MX_I2C1_Init();
+    MX_USART3_UART_Init();
+    /* USER CODE BEGIN 2 */
 
-  /* Initialize all configured peripherals */
-  MX_GPIO_Init();
-  MX_I2C1_Init();
-  MX_USART3_UART_Init();
-  /* USER CODE BEGIN 2 */
-  if (HAL_I2C_IsDeviceReady(&hi2c1, MCP9600_ADDR, 3, 100) == HAL_OK)
-  {
-    printf("MCP9600 detected\r\n");
-  }
-  else
-  {
-    printf("MCP9600 NOT detected\r\n");
-  }
-  /* USER CODE END 2 */
-
-  /* Infinite loop */
-  /* USER CODE BEGIN WHILE */
-  while (1)
-  {
+    if (HAL_I2C_IsDeviceReady(&hi2c1, MCP9600_ADDR, 3, 100) == HAL_OK)
     {
-      status = HAL_I2C_Mem_Read(
-      &hi2c1,
-      MCP9600_ADDR,
-      MCP9600_REG_HOT_JUNCTION,
-      I2C_MEMADD_SIZE_8BIT,
-      rx_data,
-      2,
-      500
-  );
-      if (status == HAL_OK) {
-        int16_t raw = (int16_t)((rx_data[0] << 8) | rx_data[1]);
+        printf("MCP9600 detected\r\n");
+    }
+    else
+    {
+        printf("MCP9600 NOT detected\r\n");
+    }
+    /* USER CODE END 2 */
 
-        printf("Raw: %d\r\n", raw);
+    /* Infinite loop */
+    /* USER CODE BEGIN WHILE */
+    while (1)
+    {
+        {
+            status = HAL_I2C_Mem_Read(
+                &hi2c1,
+                MCP9600_ADDR,
+                MCP9600_REG_HOT_JUNCTION,
+                I2C_MEMADD_SIZE_8BIT,
+                rx_data,
+                2,
+                500
+            );
+            if (status == HAL_OK)
+            {
+                int16_t raw = (int16_t)((rx_data[0] << 8) | rx_data[1]);
 
-        int abs_raw = (raw < 0) ? -raw : raw;
-        const char *sign = (raw < 0) ? "-" : "";
-        int whole = abs_raw / 16;
-        int frac = (abs_raw % 16) * 625;
+                printf("Raw: %d\r\n", raw);
 
-        printf("Temp: %s%d.%04d C\r\n\r\n", sign, whole, frac);
-      } else {
-        printf("Read Failed: %d\r\n", status);
-      }
-      HAL_Delay(1000);
-    /* USER CODE END WHILE */
+                int abs_raw = (raw < 0) ? -raw : raw;
+                const char* sign = (raw < 0) ? "-" : "";
+                int whole = abs_raw / 16;
+                int frac = (abs_raw % 16) * 625;
 
-    /* USER CODE BEGIN 3 */
-  }
-  /* USER CODE END 3 */
-}
-}
+                printf("Temp: %s%d.%04d C\r\n\r\n", sign, whole, frac);
+            }
+            else
+            {
+                printf("Read Failed: %d\r\n", status);
+            }
+            HAL_Delay(1000);
+            /* USER CODE END WHILE */
 
-/**
-  * @brief System Clock Configuration
-  * @retval None
-  */
-void SystemClock_Config(void)
-{
-  RCC_OscInitTypeDef RCC_OscInitStruct = {0};
-  RCC_ClkInitTypeDef RCC_ClkInitStruct = {0};
-
-  /** Supply configuration update enable
-  */
-  HAL_PWREx_ConfigSupply(PWR_LDO_SUPPLY);
-
-  /** Configure the main internal regulator output voltage
-  */
-  __HAL_PWR_VOLTAGESCALING_CONFIG(PWR_REGULATOR_VOLTAGE_SCALE3);
-
-  while(!__HAL_PWR_GET_FLAG(PWR_FLAG_VOSRDY)) {}
-
-  /** Initializes the RCC Oscillators according to the specified parameters
-  * in the RCC_OscInitTypeDef structure.
-  */
-  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSI;
-  RCC_OscInitStruct.HSIState = RCC_HSI_DIV1;
-  RCC_OscInitStruct.HSICalibrationValue = RCC_HSICALIBRATION_DEFAULT;
-  RCC_OscInitStruct.PLL.PLLState = RCC_PLL_NONE;
-  if (HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK)
-  {
-    Error_Handler();
-  }
-
-  /** Initializes the CPU, AHB and APB buses clocks
-  */
-  RCC_ClkInitStruct.ClockType = RCC_CLOCKTYPE_HCLK|RCC_CLOCKTYPE_SYSCLK
-                              |RCC_CLOCKTYPE_PCLK1|RCC_CLOCKTYPE_PCLK2
-                              |RCC_CLOCKTYPE_D3PCLK1|RCC_CLOCKTYPE_D1PCLK1;
-  RCC_ClkInitStruct.SYSCLKSource = RCC_SYSCLKSOURCE_HSI;
-  RCC_ClkInitStruct.SYSCLKDivider = RCC_SYSCLK_DIV1;
-  RCC_ClkInitStruct.AHBCLKDivider = RCC_HCLK_DIV1;
-  RCC_ClkInitStruct.APB3CLKDivider = RCC_APB3_DIV1;
-  RCC_ClkInitStruct.APB1CLKDivider = RCC_APB1_DIV2;
-  RCC_ClkInitStruct.APB2CLKDivider = RCC_APB2_DIV1;
-  RCC_ClkInitStruct.APB4CLKDivider = RCC_APB4_DIV1;
-
-  if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_1) != HAL_OK)
-  {
-    Error_Handler();
-  }
+            /* USER CODE BEGIN 3 */
+        }
+        /* USER CODE END 3 */
+    }
 }
 
-/**
-  * @brief I2C1 Initialization Function
-  * @param None
-  * @retval None
-  */
-static void MX_I2C1_Init(void)
-{
+    /**
+      * @brief System Clock Configuration
+      * @retval None
+      */
+    void SystemClock_Config(void)
+    {
+        RCC_OscInitTypeDef RCC_OscInitStruct = {0};
+        RCC_ClkInitTypeDef RCC_ClkInitStruct = {0};
 
-  /* USER CODE BEGIN I2C1_Init 0 */
+        /** Supply configuration update enable
+        */
+        HAL_PWREx_ConfigSupply(PWR_LDO_SUPPLY);
 
-  /* USER CODE END I2C1_Init 0 */
+        /** Configure the main internal regulator output voltage
+        */
+        __HAL_PWR_VOLTAGESCALING_CONFIG(PWR_REGULATOR_VOLTAGE_SCALE3);
 
-  /* USER CODE BEGIN I2C1_Init 1 */
+        while (!__HAL_PWR_GET_FLAG(PWR_FLAG_VOSRDY))
+        {
+        }
 
-  /* USER CODE END I2C1_Init 1 */
-  hi2c1.Instance = I2C1;
-  hi2c1.Init.Timing = 0x00707CBB;
-  hi2c1.Init.OwnAddress1 = 0;
-  hi2c1.Init.AddressingMode = I2C_ADDRESSINGMODE_7BIT;
-  hi2c1.Init.DualAddressMode = I2C_DUALADDRESS_DISABLE;
-  hi2c1.Init.OwnAddress2 = 0;
-  hi2c1.Init.OwnAddress2Masks = I2C_OA2_NOMASK;
-  hi2c1.Init.GeneralCallMode = I2C_GENERALCALL_DISABLE;
-  hi2c1.Init.NoStretchMode = I2C_NOSTRETCH_DISABLE;
-  if (HAL_I2C_Init(&hi2c1) != HAL_OK)
-  {
-    Error_Handler();
-  }
+        /** Initializes the RCC Oscillators according to the specified parameters
+        * in the RCC_OscInitTypeDef structure.
+        */
+        RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSI;
+        RCC_OscInitStruct.HSIState = RCC_HSI_DIV1;
+        RCC_OscInitStruct.HSICalibrationValue = RCC_HSICALIBRATION_DEFAULT;
+        RCC_OscInitStruct.PLL.PLLState = RCC_PLL_NONE;
+        if (HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK)
+        {
+            Error_Handler();
+        }
 
-  /** Configure Analogue filter
-  */
-  if (HAL_I2CEx_ConfigAnalogFilter(&hi2c1, I2C_ANALOGFILTER_ENABLE) != HAL_OK)
-  {
-    Error_Handler();
-  }
+        /** Initializes the CPU, AHB and APB buses clocks
+        */
+        RCC_ClkInitStruct.ClockType = RCC_CLOCKTYPE_HCLK | RCC_CLOCKTYPE_SYSCLK
+            | RCC_CLOCKTYPE_PCLK1 | RCC_CLOCKTYPE_PCLK2
+            | RCC_CLOCKTYPE_D3PCLK1 | RCC_CLOCKTYPE_D1PCLK1;
+        RCC_ClkInitStruct.SYSCLKSource = RCC_SYSCLKSOURCE_HSI;
+        RCC_ClkInitStruct.SYSCLKDivider = RCC_SYSCLK_DIV1;
+        RCC_ClkInitStruct.AHBCLKDivider = RCC_HCLK_DIV1;
+        RCC_ClkInitStruct.APB3CLKDivider = RCC_APB3_DIV1;
+        RCC_ClkInitStruct.APB1CLKDivider = RCC_APB1_DIV2;
+        RCC_ClkInitStruct.APB2CLKDivider = RCC_APB2_DIV1;
+        RCC_ClkInitStruct.APB4CLKDivider = RCC_APB4_DIV1;
 
-  /** Configure Digital filter
-  */
-  if (HAL_I2CEx_ConfigDigitalFilter(&hi2c1, 0) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  /* USER CODE BEGIN I2C1_Init 2 */
+        if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_1) != HAL_OK)
+        {
+            Error_Handler();
+        }
+    }
 
-  /* USER CODE END I2C1_Init 2 */
+    /**
+      * @brief I2C1 Initialization Function
+      * @param None
+      * @retval None
+      */
+    static void MX_I2C1_Init(void)
+    {
+        /* USER CODE BEGIN I2C1_Init 0 */
 
-}
+        /* USER CODE END I2C1_Init 0 */
 
-/**
-  * @brief USART3 Initialization Function
-  * @param None
-  * @retval None
-  */
-static void MX_USART3_UART_Init(void)
-{
+        /* USER CODE BEGIN I2C1_Init 1 */
 
-  /* USER CODE BEGIN USART3_Init 0 */
+        /* USER CODE END I2C1_Init 1 */
+        hi2c1.Instance = I2C1;
+        hi2c1.Init.Timing = 0x00707CBB;
+        hi2c1.Init.OwnAddress1 = 0;
+        hi2c1.Init.AddressingMode = I2C_ADDRESSINGMODE_7BIT;
+        hi2c1.Init.DualAddressMode = I2C_DUALADDRESS_DISABLE;
+        hi2c1.Init.OwnAddress2 = 0;
+        hi2c1.Init.OwnAddress2Masks = I2C_OA2_NOMASK;
+        hi2c1.Init.GeneralCallMode = I2C_GENERALCALL_DISABLE;
+        hi2c1.Init.NoStretchMode = I2C_NOSTRETCH_DISABLE;
+        if (HAL_I2C_Init(&hi2c1) != HAL_OK)
+        {
+            Error_Handler();
+        }
 
-  /* USER CODE END USART3_Init 0 */
+        /** Configure Analogue filter
+        */
+        if (HAL_I2CEx_ConfigAnalogFilter(&hi2c1, I2C_ANALOGFILTER_ENABLE) != HAL_OK)
+        {
+            Error_Handler();
+        }
 
-  /* USER CODE BEGIN USART3_Init 1 */
+        /** Configure Digital filter
+        */
+        if (HAL_I2CEx_ConfigDigitalFilter(&hi2c1, 0) != HAL_OK)
+        {
+            Error_Handler();
+        }
+        /* USER CODE BEGIN I2C1_Init 2 */
 
-  /* USER CODE END USART3_Init 1 */
-  huart3.Instance = USART3;
-  huart3.Init.BaudRate = 115200;
-  huart3.Init.WordLength = UART_WORDLENGTH_8B;
-  huart3.Init.StopBits = UART_STOPBITS_1;
-  huart3.Init.Parity = UART_PARITY_NONE;
-  huart3.Init.Mode = UART_MODE_TX_RX;
-  huart3.Init.HwFlowCtl = UART_HWCONTROL_NONE;
-  huart3.Init.OverSampling = UART_OVERSAMPLING_16;
-  huart3.Init.OneBitSampling = UART_ONE_BIT_SAMPLE_DISABLE;
-  huart3.Init.ClockPrescaler = UART_PRESCALER_DIV1;
-  huart3.AdvancedInit.AdvFeatureInit = UART_ADVFEATURE_NO_INIT;
-  if (HAL_UART_Init(&huart3) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  if (HAL_UARTEx_SetTxFifoThreshold(&huart3, UART_TXFIFO_THRESHOLD_1_8) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  if (HAL_UARTEx_SetRxFifoThreshold(&huart3, UART_RXFIFO_THRESHOLD_1_8) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  if (HAL_UARTEx_DisableFifoMode(&huart3) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  /* USER CODE BEGIN USART3_Init 2 */
+        /* USER CODE END I2C1_Init 2 */
+    }
 
-  /* USER CODE END USART3_Init 2 */
+    /**
+      * @brief USART3 Initialization Function
+      * @param None
+      * @retval None
+      */
+    static void MX_USART3_UART_Init(void)
+    {
+        /* USER CODE BEGIN USART3_Init 0 */
 
-}
+        /* USER CODE END USART3_Init 0 */
 
-/**
-  * @brief GPIO Initialization Function
-  * @param None
-  * @retval None
-  */
-static void MX_GPIO_Init(void)
-{
-  /* USER CODE BEGIN MX_GPIO_Init_1 */
+        /* USER CODE BEGIN USART3_Init 1 */
 
-  /* USER CODE END MX_GPIO_Init_1 */
+        /* USER CODE END USART3_Init 1 */
+        huart3.Instance = USART3;
+        huart3.Init.BaudRate = 115200;
+        huart3.Init.WordLength = UART_WORDLENGTH_8B;
+        huart3.Init.StopBits = UART_STOPBITS_1;
+        huart3.Init.Parity = UART_PARITY_NONE;
+        huart3.Init.Mode = UART_MODE_TX_RX;
+        huart3.Init.HwFlowCtl = UART_HWCONTROL_NONE;
+        huart3.Init.OverSampling = UART_OVERSAMPLING_16;
+        huart3.Init.OneBitSampling = UART_ONE_BIT_SAMPLE_DISABLE;
+        huart3.Init.ClockPrescaler = UART_PRESCALER_DIV1;
+        huart3.AdvancedInit.AdvFeatureInit = UART_ADVFEATURE_NO_INIT;
+        if (HAL_UART_Init(&huart3) != HAL_OK)
+        {
+            Error_Handler();
+        }
+        if (HAL_UARTEx_SetTxFifoThreshold(&huart3, UART_TXFIFO_THRESHOLD_1_8) != HAL_OK)
+        {
+            Error_Handler();
+        }
+        if (HAL_UARTEx_SetRxFifoThreshold(&huart3, UART_RXFIFO_THRESHOLD_1_8) != HAL_OK)
+        {
+            Error_Handler();
+        }
+        if (HAL_UARTEx_DisableFifoMode(&huart3) != HAL_OK)
+        {
+            Error_Handler();
+        }
+        /* USER CODE BEGIN USART3_Init 2 */
 
-  /* GPIO Ports Clock Enable */
-  __HAL_RCC_GPIOB_CLK_ENABLE();
+        /* USER CODE END USART3_Init 2 */
+    }
 
-  /* USER CODE BEGIN MX_GPIO_Init_2 */
+    /**
+      * @brief GPIO Initialization Function
+      * @param None
+      * @retval None
+      */
+    static void MX_GPIO_Init(void)
+    {
+        /* USER CODE BEGIN MX_GPIO_Init_1 */
 
-  /* USER CODE END MX_GPIO_Init_2 */
-}
+        /* USER CODE END MX_GPIO_Init_1 */
 
-/* USER CODE BEGIN 4 */
-  int _write(int file, char *ptr, int len)
-  {
-    HAL_UART_Transmit(&huart3, (uint8_t*)ptr, len, HAL_MAX_DELAY);
-    return len;
-  }
-/* USER CODE END 4 */
+        /* GPIO Ports Clock Enable */
+        __HAL_RCC_GPIOD_CLK_ENABLE();
+        __HAL_RCC_GPIOB_CLK_ENABLE();
 
- /* MPU Configuration */
+        /* USER CODE BEGIN MX_GPIO_Init_2 */
 
-void MPU_Config(void)
-{
-  MPU_Region_InitTypeDef MPU_InitStruct = {0};
+        /* USER CODE END MX_GPIO_Init_2 */
+    }
 
-  /* Disables the MPU */
-  HAL_MPU_Disable();
+    /* USER CODE BEGIN 4 */
+    int _write(int file, char* ptr, int len)
+    {
+        HAL_UART_Transmit(&huart3, (uint8_t*)ptr, len, HAL_MAX_DELAY);
+        return len;
+    }
+    /* USER CODE END 4 */
 
-  /** Initializes and configures the Region and the memory to be protected
-  */
-  MPU_InitStruct.Enable = MPU_REGION_ENABLE;
-  MPU_InitStruct.Number = MPU_REGION_NUMBER0;
-  MPU_InitStruct.BaseAddress = 0x0;
-  MPU_InitStruct.Size = MPU_REGION_SIZE_4GB;
-  MPU_InitStruct.SubRegionDisable = 0x87;
-  MPU_InitStruct.TypeExtField = MPU_TEX_LEVEL0;
-  MPU_InitStruct.AccessPermission = MPU_REGION_NO_ACCESS;
-  MPU_InitStruct.DisableExec = MPU_INSTRUCTION_ACCESS_DISABLE;
-  MPU_InitStruct.IsShareable = MPU_ACCESS_SHAREABLE;
-  MPU_InitStruct.IsCacheable = MPU_ACCESS_NOT_CACHEABLE;
-  MPU_InitStruct.IsBufferable = MPU_ACCESS_NOT_BUFFERABLE;
+    /* MPU Configuration */
 
-  HAL_MPU_ConfigRegion(&MPU_InitStruct);
-  /* Enables the MPU */
-  HAL_MPU_Enable(MPU_PRIVILEGED_DEFAULT);
+    void MPU_Config(void)
+    {
+        MPU_Region_InitTypeDef MPU_InitStruct = {0};
 
-}
+        /* Disables the MPU */
+        HAL_MPU_Disable();
 
-/**
-  * @brief  This function is executed in case of error occurrence.
-  * @retval None
-  */
-void Error_Handler(void)
-{
-  /* USER CODE BEGIN Error_Handler_Debug */
-  /* User can add his own implementation to report the HAL error return state */
-  __disable_irq();
-  while (1)
-  {
-  }
-  /* USER CODE END Error_Handler_Debug */
-}
+        /** Initializes and configures the Region and the memory to be protected
+        */
+        MPU_InitStruct.Enable = MPU_REGION_ENABLE;
+        MPU_InitStruct.Number = MPU_REGION_NUMBER0;
+        MPU_InitStruct.BaseAddress = 0x0;
+        MPU_InitStruct.Size = MPU_REGION_SIZE_4GB;
+        MPU_InitStruct.SubRegionDisable = 0x87;
+        MPU_InitStruct.TypeExtField = MPU_TEX_LEVEL0;
+        MPU_InitStruct.AccessPermission = MPU_REGION_NO_ACCESS;
+        MPU_InitStruct.DisableExec = MPU_INSTRUCTION_ACCESS_DISABLE;
+        MPU_InitStruct.IsShareable = MPU_ACCESS_SHAREABLE;
+        MPU_InitStruct.IsCacheable = MPU_ACCESS_NOT_CACHEABLE;
+        MPU_InitStruct.IsBufferable = MPU_ACCESS_NOT_BUFFERABLE;
+
+        HAL_MPU_ConfigRegion(&MPU_InitStruct);
+        /* Enables the MPU */
+        HAL_MPU_Enable(MPU_PRIVILEGED_DEFAULT);
+    }
+
+    /**
+      * @brief  This function is executed in case of error occurrence.
+      * @retval None
+      */
+    void Error_Handler(void)
+    {
+        /* USER CODE BEGIN Error_Handler_Debug */
+        /* User can add his own implementation to report the HAL error return state */
+        __disable_irq();
+        while (1)
+        {
+        }
+        /* USER CODE END Error_Handler_Debug */
+    }
 #ifdef USE_FULL_ASSERT
 /**
   * @brief  Reports the name of the source file and the source line number
@@ -372,11 +380,11 @@ void Error_Handler(void)
   * @param  line: assert_param error line source number
   * @retval None
   */
-void assert_failed(uint8_t *file, uint32_t line)
+void assert_failed(uint8_t* file, uint32_t line)
 {
-  /* USER CODE BEGIN 6 */
-  /* User can add his own implementation to report the file name and line number,
-     ex: printf("Wrong parameters value: file %s on line %d\r\n", file, line) */
-  /* USER CODE END 6 */
+    /* USER CODE BEGIN 6 */
+    /* User can add his own implementation to report the file name and line number,
+       ex: printf("Wrong parameters value: file %s on line %d\r\n", file, line) */
+    /* USER CODE END 6 */
 }
 #endif /* USE_FULL_ASSERT */
