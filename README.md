@@ -13,4 +13,4 @@ The current implementation of the thermocouple driver is built to support I2C co
 
 ## Reference
 
-The driver is written with respect to the STM32H753ZIT6. With respect to the .ioc file, all references are to the STM32H7 HAL and configured according to the STM3253ZIT6 pinout.
+The driver is written with respect to the STM32H753ZIT6. With respect to the .ioc file, all references are to the STM32H7 HAL and configured according to the STM3253ZIT6 pinout. The .ioc file currently enables two multimedia peripherals: I2C1 (PB6, PB7) and USART3 (PD8, PD9).
