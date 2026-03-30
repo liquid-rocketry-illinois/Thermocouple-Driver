@@ -59,13 +59,13 @@ static void MX_I2C1_Init(void);
 static void MX_USART3_UART_Init(void);
 /* USER CODE BEGIN PFP */
 
-/*int __io_putchar(int cha)
+int __io_putchar(int cha)
 {
   unsigned char ch = cha;
   HAL_UART_Transmit(&huart3, &ch, 1, HAL_MAX_DELAY);
   return cha;
   // HAL_UART_Transmit(&hu)
-}*/
+}
 
 /* USER CODE END PFP */
 
