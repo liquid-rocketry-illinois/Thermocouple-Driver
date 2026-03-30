@@ -58,13 +58,14 @@ static void MX_GPIO_Init(void);
 static void MX_I2C1_Init(void);
 static void MX_USART3_UART_Init(void);
 /* USER CODE BEGIN PFP */
-int __io_putchar(int cha)
+
+/*int __io_putchar(int cha)
 {
-    unsigned char ch = cha;
-    HAL_UART_Transmit(&huart3, &ch, 1, HAL_MAX_DELAY);
-    return cha;
-    // HAL_UART_Transmit(&hu)
-}
+  unsigned char ch = cha;
+  HAL_UART_Transmit(&huart3, &ch, 1, HAL_MAX_DELAY);
+  return cha;
+  // HAL_UART_Transmit(&hu)
+}*/
 
 /* USER CODE END PFP */
 
@@ -107,7 +108,7 @@ int main(void)
   MX_I2C1_Init();
   MX_USART3_UART_Init();
   /* USER CODE BEGIN 2 */
-
+  setvbuf(stdout, NULL, _IONBF, 0);
   if (HAL_I2C_IsDeviceReady(&hi2c1, MCP9600_ADDR, 3, 100) == HAL_OK)
   {
     printf("MCP9600 detected\r\n");
@@ -122,6 +123,18 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
+      // Checks status of MCP9600 (see below for number value meanings)
+      HAL_StatusTypeDef detect = HAL_I2C_IsDeviceReady(&hi2c1, MCP9600_ADDR, 3, 100);
+      printf("Device detect status: %d\r\n", detect); // 0=OK, 1=ERROR, 2=BUSY, 3=TIMEOUT
+
+      // Checks I2C bus for address value
+      printf("Scanning I2C bus...\r\n");
+      for (uint8_t addr = 1; addr < 128; addr++) {
+        if (HAL_I2C_IsDeviceReady(&hi2c1, addr << 1, 1, 10) == HAL_OK) {
+          printf("Device found at 0x%02X\r\n", addr);
+        }
+      }
+
       status = HAL_I2C_Mem_Read(
           &hi2c1,
           MCP9600_ADDR,
@@ -144,7 +157,12 @@ int main(void)
         printf("Temp: %s%d.%04d C\r\n\r\n", sign, whole, frac);
       }
       else {
+        if (status != HAL_OK)
+        {
+          printf("Status currently not occupying HAL_OK.\r\n");
+        }
         printf("Read Failed: %d\r\n", status);
+        printf("APB1 Clock: %lu Hz\r\n", HAL_RCC_GetPCLK1Freq());
       }
       HAL_Delay(1000);
       /* USER CODE END WHILE */
