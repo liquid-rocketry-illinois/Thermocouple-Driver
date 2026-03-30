@@ -58,7 +58,6 @@ static void MX_GPIO_Init(void);
 static void MX_I2C1_Init(void);
 static void MX_USART3_UART_Init(void);
 /* USER CODE BEGIN PFP */
-
 int __io_putchar(int cha)
 {
   unsigned char ch = cha;
@@ -66,7 +65,6 @@ int __io_putchar(int cha)
   return cha;
   // HAL_UART_Transmit(&hu)
 }
-
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -149,6 +147,7 @@ int main(void)
 
         printf("Raw: %d\r\n", raw);
 
+        // Raw to voltage conversion
         int abs_raw = (raw < 0) ? -raw : raw;
         const char* sign = (raw < 0) ? "-" : "";
         int whole = abs_raw / 16;
@@ -157,6 +156,7 @@ int main(void)
         printf("Temp: %s%d.%04d C\r\n\r\n", sign, whole, frac);
       }
       else {
+        // HAL_OK error condition
         if (status != HAL_OK)
         {
           printf("Status currently not occupying HAL_OK.\r\n");
@@ -164,6 +164,7 @@ int main(void)
         printf("Read Failed: %d\r\n", status);
         printf("APB1 Clock: %lu Hz\r\n", HAL_RCC_GetPCLK1Freq());
       }
+      // Read interval in ms (1000 ms > 1 Hz)
       HAL_Delay(1000);
       /* USER CODE END WHILE */
 
