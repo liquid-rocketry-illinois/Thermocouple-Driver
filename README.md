@@ -52,7 +52,7 @@ The connections to be made between the STM32H753ZI Nucleo-144 and MCP960 are to 
 **Absolute maximum voltage range**: 6.0 V <br/>
 **Storage temperature**: -65°C to +150°C <br/>
 **Ambient temperature with power applied**: -40°C to +125°C <br/>
-**Sensor accuracy**: (see [MCP9600 datasheet](https://ww1.microchip.com/downloads/en/DeviceDoc/MCP960X-Data-Sheet-20005426.pdf), pg. 3 MCP9600/01)
+**Sensor accuracy**: (see [MCP9600 datasheet](https://ww1.microchip.com/downloads/en/DeviceDoc/MCP960X-Data-Sheet-20005426.pdf), pg. 3 MCP9600/01) <br/>
 **Thermocouple support for**: K-, J-, N-, T-, S-, R-, E-, B-type thermocouple <br/>
 
 ## Compiling
