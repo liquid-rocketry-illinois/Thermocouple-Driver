@@ -125,7 +125,7 @@ int main(void)
       HAL_StatusTypeDef detect = HAL_I2C_IsDeviceReady(&hi2c1, MCP9600_ADDR, 3, 100);
       printf("Device detect status: %d\r\n", detect); // 0=OK, 1=ERROR, 2=BUSY, 3=TIMEOUT
 
-      // Checks I2C bus for address value
+      // Checks I2C bus for each address value
       printf("Scanning I2C bus...\r\n");
       for (uint8_t addr = 1; addr < 128; addr++) {
         if (HAL_I2C_IsDeviceReady(&hi2c1, addr << 1, 1, 10) == HAL_OK) {
