@@ -42,6 +42,7 @@ The connections to be made between the STM32H753ZI Nucleo-144 and MCP960 are to 
    </tbody>
 </table>
 <i>ADR is routed to GND to force an address value of 0x60. It may be configured differently to set a different address value.</i> <br/>
+
 **A thermocouple is connected to the MCP9600 as follows**: Blue wire to negative channel (–), red to positive channel (+)
 
 ## Main Parts
