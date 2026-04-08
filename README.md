@@ -43,7 +43,9 @@ The connections to be made between the STM32H753ZI Nucleo-144 and MCP960 are to 
 </table>
 <i>ADR is routed to GND to force an address value of 0x60. It may be configured differently to set a different address value.</i> <br/>
 
-**A thermocouple is connected to the MCP9600 as follows**: Blue wire to negative channel (–), red to positive channel (+)
+**A thermocouple is connected to the MCP9600 as follows**: <br/>
+🔵 BLUE wire to negative channel (–) <br/>
+🔴 RED to positive channel (+) <br/>
 
 ## Main Parts
 **MCP9600 Thermocouple Amplifier**: [Adafruit MCP9600 Breakout Board](https://www.adafruit.com/product/4101), [MCP9600 IC](https://www.digikey.com/en/products/detail/microchip-technology/MCP9600-E-MX/6009305?gclid=26fb766dc0161d939b531fa5d559c2f0&gclsrc=3p.ds&msclkid=26fb766dc0161d939b531fa5d559c2f0) <br/>
