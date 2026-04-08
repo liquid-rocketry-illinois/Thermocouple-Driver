@@ -31,8 +31,19 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
-#define MCP9600_ADDR (0x60 << 1)
-#define MCP9600_REG_HOT_JUNCTION 0x00
+#define MCP9600_ADDR                (0x60 << 1)
+#define MCP9600_REG_HOT_JUNCTION    0x00
+#define MCP9600_REG_SENSOR_CONFIG   0x05
+
+//thermocouple types
+#define MCP9600_TYPE_K  (0x00 << 1)
+#define MCP9600_TYPE_J  (0x01 << 1)
+#define MCP9600_TYPE_T  (0x02 << 1)
+#define MCP9600_TYPE_N  (0x03 << 1)
+#define MCP9600_TYPE_S  (0x04 << 1)
+#define MCP9600_TYPE_E  (0x05 << 1)
+#define MCP9600_TYPE_B  (0x06 << 1)
+#define MCP9600_TYPE_R  (0x07 << 1)
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -43,28 +54,24 @@
 /* Private variables ---------------------------------------------------------*/
 
 I2C_HandleTypeDef hi2c1;
+DMA_HandleTypeDef hdma_i2c1_rx;
+DMA_HandleTypeDef hdma_i2c1_tx;
 
 UART_HandleTypeDef huart3;
 
 /* USER CODE BEGIN PV */
-uint8_t rx_data[2];
-HAL_StatusTypeDef status;
+uint32_t rx_data;
+uint8_t dma_done = 0;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
 static void MPU_Config(void);
 static void MX_GPIO_Init(void);
+static void MX_DMA_Init(void);
 static void MX_I2C1_Init(void);
 static void MX_USART3_UART_Init(void);
 /* USER CODE BEGIN PFP */
-int __io_putchar(int cha)
-{
-  unsigned char ch = cha;
-  HAL_UART_Transmit(&huart3, &ch, 1, HAL_MAX_DELAY);
-  return cha;
-  // HAL_UART_Transmit(&hu)
-}
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -78,6 +85,7 @@ int __io_putchar(int cha)
   */
 int main(void)
 {
+
   /* USER CODE BEGIN 1 */
 
   /* USER CODE END 1 */
@@ -103,75 +111,48 @@ int main(void)
 
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
+  MX_DMA_Init();
   MX_I2C1_Init();
   MX_USART3_UART_Init();
+
+
   /* USER CODE BEGIN 2 */
-  setvbuf(stdout, NULL, _IONBF, 0);
-  if (HAL_I2C_IsDeviceReady(&hi2c1, MCP9600_ADDR, 3, 100) == HAL_OK)
-  {
-    printf("MCP9600 detected\r\n");
-  }
-  else
-  {
-    printf("MCP9600 NOT detected\r\n");
-  }
+  uint8_t sensor_cfg[2] = { MCP9600_REG_SENSOR_CONFIG, MCP9600_TYPE_K };
+  HAL_I2C_Master_Transmit(&hi2c1, MCP9600_ADDR, sensor_cfg, 2, HAL_MAX_DELAY);
+
+  HAL_I2C_Mem_Read_DMA(&hi2c1, MCP9600_ADDR, MCP9600_REG_HOT_JUNCTION,
+                        I2C_MEMADD_SIZE_8BIT, (uint8_t*) &rx_data, 2);
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-      // Checks status of MCP9600 (see below for number value meanings)
-      HAL_StatusTypeDef detect = HAL_I2C_IsDeviceReady(&hi2c1, MCP9600_ADDR, 3, 100);
-      printf("Device detect status: %d\r\n", detect); // 0=OK, 1=ERROR, 2=BUSY, 3=TIMEOUT
+    if (dma_done)
+    {
+      dma_done = 0;
+      SCB_CleanDCache_by_Addr(&rx_data, 1);
+      uint8_t* byte_data = (uint8_t*) &rx_data;
 
-      // Checks I2C bus for each address value
-      printf("Scanning I2C bus...\r\n");
-      for (uint8_t addr = 1; addr < 128; addr++) {
-        if (HAL_I2C_IsDeviceReady(&hi2c1, addr << 1, 1, 10) == HAL_OK) {
-          printf("Device found at 0x%02X\r\n", addr);
-        }
-      }
+      int16_t raw = (int16_t)((byte_data[0] << 8) | byte_data[1]);
+      int abs_raw = (raw < 0) ? -raw : raw;
+      const char *sign = (raw < 0) ? "-" : "";
+      int whole = abs_raw >> 4;
+      int frac  = (abs_raw & 0x0F) * 625;
 
-      status = HAL_I2C_Mem_Read(
-          &hi2c1,
-          MCP9600_ADDR,
-          MCP9600_REG_HOT_JUNCTION,
-          I2C_MEMADD_SIZE_8BIT,
-          rx_data,
-          2,
-          500
-      );
-      if (status == HAL_OK) {
-        int16_t raw = (int16_t)((rx_data[0] << 8) | rx_data[1]);
+      printf("Temp: %s%d.%04d C\r\n", sign, whole, frac);
 
-        printf("Raw: %d\r\n", raw);
-
-        // Raw to voltage conversion
-        int abs_raw = (raw < 0) ? -raw : raw;
-        const char* sign = (raw < 0) ? "-" : "";
-        int whole = abs_raw / 16;
-        int frac = (abs_raw % 16) * 625;
-
-        printf("Temp: %s%d.%04d C\r\n\r\n", sign, whole, frac);
-      }
-      else {
-        // HAL_OK error condition
-        if (status != HAL_OK)
-        {
-          printf("Status currently not occupying HAL_OK.\r\n");
-        }
-        printf("Read Failed: %d\r\n", status);
-        printf("APB1 Clock: %lu Hz\r\n", HAL_RCC_GetPCLK1Freq());
-      }
-      // Read interval in ms (1000 ms > 1 Hz)
       HAL_Delay(1000);
-      /* USER CODE END WHILE */
 
-      /* USER CODE BEGIN 3 */
+      HAL_I2C_Mem_Read_DMA(&hi2c1, MCP9600_ADDR, MCP9600_REG_HOT_JUNCTION,
+      I2C_MEMADD_SIZE_8BIT, (uint8_t*) &rx_data, 2);
     }
-    /* USER CODE END 3 */
+    /* USER CODE END WHILE */
+
+    /* USER CODE BEGIN 3 */
   }
+  /* USER CODE END 3 */
+}
 
 /**
   * @brief System Clock Configuration
@@ -247,24 +228,29 @@ static void MX_I2C1_Init(void)
   hi2c1.Init.OwnAddress2Masks = I2C_OA2_NOMASK;
   hi2c1.Init.GeneralCallMode = I2C_GENERALCALL_DISABLE;
   hi2c1.Init.NoStretchMode = I2C_NOSTRETCH_DISABLE;
-  if (HAL_I2C_Init(&hi2c1) != HAL_OK) {
+  if (HAL_I2C_Init(&hi2c1) != HAL_OK)
+  {
     Error_Handler();
   }
 
   /** Configure Analogue filter
   */
-  if (HAL_I2CEx_ConfigAnalogFilter(&hi2c1, I2C_ANALOGFILTER_ENABLE) != HAL_OK) {
+  if (HAL_I2CEx_ConfigAnalogFilter(&hi2c1, I2C_ANALOGFILTER_ENABLE) != HAL_OK)
+  {
     Error_Handler();
+
   }
 
   /** Configure Digital filter
   */
-  if (HAL_I2CEx_ConfigDigitalFilter(&hi2c1, 0) != HAL_OK) {
+  if (HAL_I2CEx_ConfigDigitalFilter(&hi2c1, 0) != HAL_OK)
+  {
     Error_Handler();
   }
   /* USER CODE BEGIN I2C1_Init 2 */
 
   /* USER CODE END I2C1_Init 2 */
+
 }
 
 /**
@@ -316,6 +302,25 @@ static void MX_USART3_UART_Init(void)
 }
 
 /**
+  * Enable DMA controller clock
+  */
+static void MX_DMA_Init(void)
+{
+
+  /* DMA controller clock enable */
+  __HAL_RCC_DMA1_CLK_ENABLE();
+
+  /* DMA interrupt init */
+  /* DMA1_Stream0_IRQn interrupt configuration */
+  HAL_NVIC_SetPriority(DMA1_Stream0_IRQn, 0, 0);
+  HAL_NVIC_EnableIRQ(DMA1_Stream0_IRQn);
+  /* DMA1_Stream1_IRQn interrupt configuration */
+  HAL_NVIC_SetPriority(DMA1_Stream1_IRQn, 0, 0);
+  HAL_NVIC_EnableIRQ(DMA1_Stream1_IRQn);
+
+}
+
+/**
   * @brief GPIO Initialization Function
   * @param None
   * @retval None
@@ -336,11 +341,19 @@ static void MX_GPIO_Init(void)
 }
 
 /* USER CODE BEGIN 4 */
-    int _write(int file, char* ptr, int len)
-    {
-        HAL_UART_Transmit(&huart3, (uint8_t*)ptr, len, HAL_MAX_DELAY);
-        return len;
-    }
+int __io_putchar(int ch)
+{
+  HAL_UART_Transmit(&huart3, (uint8_t*)&ch, 1, HAL_MAX_DELAY);
+  return ch;
+}
+
+void HAL_I2C_MemRxCpltCallback(I2C_HandleTypeDef *hi2c)
+{
+  if (hi2c->Instance == I2C1)
+  {
+    dma_done = 1;
+  }
+}
 /* USER CODE END 4 */
 
  /* MPU Configuration */
