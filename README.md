@@ -5,7 +5,7 @@
 The current implementation of the thermocouple driver is built to support I2C communication with the MCP9600 (Microchip) board. The MCP9600 converts thermocouple EMF to degree Celsius with integrated cold-junction compensation. The temperature correction coefficients are derived from the National Institute of Standards and Technology (NIST) [ITS-90 Thermocouple Database](https://data.nist.gov/pdr/lps/ECBCC1C1302A2ED9E04306570681B10748). The MCP9600 corrects the thermocouple nonlinear error characteristics of eight thermocouple types and outputs ±0.5°C/±1.5°C (Typ./Max.). <br/>
 
 ## Usage
-<img width="480" height="360" alt="thermocouple_driver_wiring" src="https://github.com/user-attachments/assets/3910a3c8-b975-40a0-b8a2-617fb01989d9"/> <br/>
+<img width="480" height="360" alt="thermocouple_driver_wiring" src="https://github.com/liquid-rocketry-illinois/Thermocouple-Driver/blob/main/imagery/thermocouple_driver_wiring.png"/> <br/>
 The connections to be made between the STM32H753ZI Nucleo-144 and MCP960 are to be made as follows: <br/>
 <table border="1" style="border-collapse: collapse;">
    <thead>
