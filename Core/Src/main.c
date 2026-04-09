@@ -97,7 +97,6 @@ int main(void)
 
   /* Reset of all peripherals, Initializes the Flash interface and the Systick. */
   HAL_Init();
-
   /* USER CODE BEGIN Init */
 
   /* USER CODE END Init */
@@ -118,10 +117,12 @@ int main(void)
 
   /* USER CODE BEGIN 2 */
   uint8_t sensor_cfg[2] = { MCP9600_REG_SENSOR_CONFIG, MCP9600_TYPE_K };
-  HAL_I2C_Master_Transmit(&hi2c1, MCP9600_ADDR, sensor_cfg, 2, HAL_MAX_DELAY);
+  HAL_StatusTypeDef tx_status = HAL_I2C_Master_Transmit(&hi2c1, MCP9600_ADDR, sensor_cfg, 2, HAL_MAX_DELAY);
+  printf("TX status: %d\r\n", tx_status);  // 0=OK, 1=ERROR, 2=BUSY, 3=TIMEOUT
 
-  HAL_I2C_Mem_Read_DMA(&hi2c1, MCP9600_ADDR, MCP9600_REG_HOT_JUNCTION,
+  HAL_StatusTypeDef dma_status = HAL_I2C_Mem_Read_DMA(&hi2c1, MCP9600_ADDR, MCP9600_REG_HOT_JUNCTION,
                         I2C_MEMADD_SIZE_8BIT, (uint8_t*) &rx_data, 2);
+  printf("DMA start status: %d\r\n", dma_status);  // 0=OK, anything else=problem
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -131,7 +132,7 @@ int main(void)
     if (dma_done)
     {
       dma_done = 0;
-      SCB_CleanDCache_by_Addr(&rx_data, 1);
+      SCB_InvalidateDCache_by_Addr((uint32_t*)&rx_data, sizeof(rx_data));
       uint8_t* byte_data = (uint8_t*) &rx_data;
 
       int16_t raw = (int16_t)((byte_data[0] << 8) | byte_data[1]);
@@ -146,6 +147,9 @@ int main(void)
 
       HAL_I2C_Mem_Read_DMA(&hi2c1, MCP9600_ADDR, MCP9600_REG_HOT_JUNCTION,
       I2C_MEMADD_SIZE_8BIT, (uint8_t*) &rx_data, 2);
+    }else
+    {
+      printf("DMA DONE");
     }
     /* USER CODE END WHILE */
 
