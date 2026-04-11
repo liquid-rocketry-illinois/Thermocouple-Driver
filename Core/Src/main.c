@@ -60,8 +60,8 @@ DMA_HandleTypeDef hdma_i2c1_tx;
 UART_HandleTypeDef huart3;
 
 /* USER CODE BEGIN PV */
-uint32_t          rx_data     ;   // Reserves 32 bits for rx_data
-volatile uint8_t  dma_done = 0;   // Initializes dma_done to 0 (false)
+[[gnu::section(".I2C_RAW")]]  uint32_t rx_data;   // Reserves 32 bits for rx_data
+volatile uint8_t              dma_done = 0;       // Initializes dma_done to 0 (false)
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -93,10 +93,19 @@ int main(void)
   /* MPU Configuration--------------------------------------------------------*/
   MPU_Config();
 
+  /* Enable the CPU Cache */
+
+  /* Enable I-Cache---------------------------------------------------------*/
+  SCB_EnableICache();
+
+  /* Enable D-Cache---------------------------------------------------------*/
+  SCB_EnableDCache();
+
   /* MCU Configuration--------------------------------------------------------*/
 
   /* Reset of all peripherals, Initializes the Flash interface and the Systick. */
   HAL_Init();
+
   /* USER CODE BEGIN Init */
 
   /* USER CODE END Init */
@@ -113,8 +122,6 @@ int main(void)
   MX_DMA_Init();
   MX_I2C1_Init();
   MX_USART3_UART_Init();
-
-
   /* USER CODE BEGIN 2 */
   uint8_t sensor_cfg[2]       = { MCP9600_REG_SENSOR_CONFIG, MCP9600_TYPE_K };
 
@@ -251,7 +258,6 @@ static void MX_I2C1_Init(void)
   if (HAL_I2CEx_ConfigAnalogFilter(&hi2c1, I2C_ANALOGFILTER_ENABLE) != HAL_OK)
   {
     Error_Handler();
-
   }
 
   /** Configure Digital filter
@@ -391,6 +397,16 @@ void MPU_Config(void)
   MPU_InitStruct.IsShareable = MPU_ACCESS_SHAREABLE;
   MPU_InitStruct.IsCacheable = MPU_ACCESS_NOT_CACHEABLE;
   MPU_InitStruct.IsBufferable = MPU_ACCESS_NOT_BUFFERABLE;
+
+  HAL_MPU_ConfigRegion(&MPU_InitStruct);
+
+  /** Initializes and configures the Region and the memory to be protected
+  */
+  MPU_InitStruct.Number = MPU_REGION_NUMBER1;
+  MPU_InitStruct.BaseAddress = 0x30001000;
+  MPU_InitStruct.Size = MPU_REGION_SIZE_32B;
+  MPU_InitStruct.SubRegionDisable = 0x0;
+  MPU_InitStruct.AccessPermission = MPU_REGION_FULL_ACCESS;
 
   HAL_MPU_ConfigRegion(&MPU_InitStruct);
   /* Enables the MPU */
