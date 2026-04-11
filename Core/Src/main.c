@@ -60,8 +60,8 @@ DMA_HandleTypeDef hdma_i2c1_tx;
 UART_HandleTypeDef huart3;
 
 /* USER CODE BEGIN PV */
-[[gnu::section(".I2C_RAW")]] uint32_t rx_data;
-volatile uint8_t dma_done = 0;
+[[gnu::section(".I2C_RAW")]]  uint32_t rx_data;   // Reserves 32 bits for rx_data
+volatile uint8_t              dma_done = 0;       // Initializes dma_done to 0 (false)
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -93,10 +93,19 @@ int main(void)
   /* MPU Configuration--------------------------------------------------------*/
   MPU_Config();
 
+  /* Enable the CPU Cache */
+
+  /* Enable I-Cache---------------------------------------------------------*/
+  SCB_EnableICache();
+
+  /* Enable D-Cache---------------------------------------------------------*/
+  SCB_EnableDCache();
+
   /* MCU Configuration--------------------------------------------------------*/
 
   /* Reset of all peripherals, Initializes the Flash interface and the Systick. */
   HAL_Init();
+
   /* USER CODE BEGIN Init */
 
   /* USER CODE END Init */
@@ -113,16 +122,18 @@ int main(void)
   MX_DMA_Init();
   MX_I2C1_Init();
   MX_USART3_UART_Init();
-
-
   /* USER CODE BEGIN 2 */
-  uint8_t sensor_cfg[2] = { MCP9600_REG_SENSOR_CONFIG, MCP9600_TYPE_K };
+  HAL_StatusTypeDef status;
+  uint8_t sensor_cfg[2]       = { MCP9600_REG_SENSOR_CONFIG, MCP9600_TYPE_T };
+  // USER CODE DEBUG
+  // Checks I2C transmit status
   HAL_StatusTypeDef tx_status = HAL_I2C_Master_Transmit(&hi2c1, MCP9600_ADDR, sensor_cfg, 2, HAL_MAX_DELAY);
-  printf("TX status: %d\r\n", tx_status);  // 0=OK, 1=ERROR, 2=BUSY, 3=TIMEOUT
-
+  printf("TX status: %d\r\n", tx_status);           // 0=OK, 1=ERROR, 2=BUSY, 3=TIMEOUT
+  // Checks DMA status
   HAL_StatusTypeDef dma_status = HAL_I2C_Mem_Read_DMA(&hi2c1, MCP9600_ADDR, MCP9600_REG_HOT_JUNCTION,
-                        I2C_MEMADD_SIZE_8BIT, (uint8_t*) &rx_data, 2);
-  printf("DMA start status: %d\r\n", dma_status);  // 0=OK, anything else=problem
+                                           I2C_MEMADD_SIZE_8BIT, (uint8_t*) &rx_data, 2);
+  printf("DMA start status: %d\r\n", dma_status);   // 0=OK, 1=ERROR, 2=BUSY, 3=TIMEOUT
+
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -143,8 +154,16 @@ int main(void)
 
       HAL_Delay(1000);
 
-      HAL_I2C_Mem_Read_DMA(&hi2c1, MCP9600_ADDR, MCP9600_REG_HOT_JUNCTION,
+      status = HAL_I2C_Mem_Read_DMA(&hi2c1, MCP9600_ADDR, MCP9600_REG_HOT_JUNCTION,
       I2C_MEMADD_SIZE_8BIT, (uint8_t*) &rx_data, 2);
+    }
+    else
+    {
+      printf("Waiting for DMA...\r\n");
+      if (status != HAL_OK)
+      {
+        printf("HAL STATUS: %d", status);
+      }
     }
     /* USER CODE END WHILE */
 
@@ -237,7 +256,6 @@ static void MX_I2C1_Init(void)
   if (HAL_I2CEx_ConfigAnalogFilter(&hi2c1, I2C_ANALOGFILTER_ENABLE) != HAL_OK)
   {
     Error_Handler();
-
   }
 
   /** Configure Digital filter
@@ -379,6 +397,16 @@ void MPU_Config(void)
   MPU_InitStruct.IsBufferable = MPU_ACCESS_NOT_BUFFERABLE;
 
   HAL_MPU_ConfigRegion(&MPU_InitStruct);
+
+  /** Initializes and configures the Region and the memory to be protected
+  */
+  MPU_InitStruct.Number = MPU_REGION_NUMBER1;
+  MPU_InitStruct.BaseAddress = 0x30001000;
+  MPU_InitStruct.Size = MPU_REGION_SIZE_32B;
+  MPU_InitStruct.SubRegionDisable = 0x0;
+  MPU_InitStruct.AccessPermission = MPU_REGION_FULL_ACCESS;
+
+  HAL_MPU_ConfigRegion(&MPU_InitStruct);
   /* Enables the MPU */
   HAL_MPU_Enable(MPU_PRIVILEGED_DEFAULT);
 
@@ -393,6 +421,7 @@ void Error_Handler(void)
   /* USER CODE BEGIN Error_Handler_Debug */
         /* User can add his own implementation to report the HAL error return state */
         __disable_irq();
+        printf("Threw error");
         while (1)
         {
         }

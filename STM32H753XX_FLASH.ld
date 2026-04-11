@@ -241,10 +241,10 @@ SECTIONS
   } >DTCMRAM
 
   .DMASECTIONS (NOLOAD) :
-  {
-    . = ABSOLUTE(0x30001000);
-    *(.I2C_RAW)
-  } >RAM_D2
+    {
+      . = ABSOLUTE(0x30001000);
+      *(.I2C_RAW)
+    } >RAM_D2
 
   /* Remove information from the standard libraries */
   /DISCARD/ :
