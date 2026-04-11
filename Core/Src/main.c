@@ -60,8 +60,8 @@ DMA_HandleTypeDef hdma_i2c1_tx;
 UART_HandleTypeDef huart3;
 
 /* USER CODE BEGIN PV */
-uint32_t rx_data;
-uint8_t dma_done = 0;
+uint32_t          rx_data     ;   // Reserves 32 bits for rx_data
+volatile uint8_t  dma_done = 0;   // Initializes dma_done to 0 (false)
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -116,13 +116,21 @@ int main(void)
 
 
   /* USER CODE BEGIN 2 */
-  uint8_t sensor_cfg[2] = { MCP9600_REG_SENSOR_CONFIG, MCP9600_TYPE_K };
+  uint8_t sensor_cfg[2]       = { MCP9600_REG_SENSOR_CONFIG, MCP9600_TYPE_K };
+
+  // USER CODE DEBUG
+  // Checks I2C transmit status
   HAL_StatusTypeDef tx_status = HAL_I2C_Master_Transmit(&hi2c1, MCP9600_ADDR, sensor_cfg, 2, HAL_MAX_DELAY);
   printf("TX status: %d\r\n", tx_status);  // 0=OK, 1=ERROR, 2=BUSY, 3=TIMEOUT
+  if (!tx_status)
+  {
+    printf("I2C OK");
+  }
 
   HAL_StatusTypeDef dma_status = HAL_I2C_Mem_Read_DMA(&hi2c1, MCP9600_ADDR, MCP9600_REG_HOT_JUNCTION,
-                        I2C_MEMADD_SIZE_8BIT, (uint8_t*) &rx_data, 2);
-  printf("DMA start status: %d\r\n", dma_status);  // 0=OK, anything else=problem
+                                           I2C_MEMADD_SIZE_8BIT, (uint8_t*) &rx_data, 2);
+  printf("DMA start status: %d\r\n", dma_status);  // 0=OK,   printf("DMA start status: %d\r\n", dma_status);  // 0=OK, anything else=problem
+
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -150,8 +158,7 @@ int main(void)
     }
     else
     {
-      printf("DMA DONE");
-      HAL_Delay(1000);
+      printf("Waiting for DMA...\r\n");
     }
     /* USER CODE END WHILE */
 
@@ -400,6 +407,7 @@ void Error_Handler(void)
   /* USER CODE BEGIN Error_Handler_Debug */
         /* User can add his own implementation to report the HAL error return state */
         __disable_irq();
+        printf("Threw error");
         while (1)
         {
         }
