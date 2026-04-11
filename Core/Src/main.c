@@ -60,8 +60,8 @@ DMA_HandleTypeDef hdma_i2c1_tx;
 UART_HandleTypeDef huart3;
 
 /* USER CODE BEGIN PV */
-uint32_t rx_data;
-uint8_t dma_done = 0;
+[[gnu::section(".I2C_RAW")]] uint32_t rx_data;
+volatile uint8_t dma_done = 0;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -127,10 +127,8 @@ int main(void)
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
-  while (1)
-  {
-    if (dma_done)
-    {
+  while (1){
+    if (dma_done){
       dma_done = 0;
       SCB_InvalidateDCache_by_Addr((uint32_t*)&rx_data, sizeof(rx_data));
       uint8_t* byte_data = (uint8_t*) &rx_data;
@@ -147,9 +145,6 @@ int main(void)
 
       HAL_I2C_Mem_Read_DMA(&hi2c1, MCP9600_ADDR, MCP9600_REG_HOT_JUNCTION,
       I2C_MEMADD_SIZE_8BIT, (uint8_t*) &rx_data, 2);
-    }else
-    {
-      printf("DMA DONE");
     }
     /* USER CODE END WHILE */
 
