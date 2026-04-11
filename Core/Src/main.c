@@ -138,10 +138,8 @@ int main(void)
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
-  while (1)
-  {
-    if (dma_done)
-    {
+  while (1){
+    if (dma_done){
       dma_done = 0;
       SCB_InvalidateDCache_by_Addr((uint32_t*)&rx_data, sizeof(rx_data));
       uint8_t* byte_data = (uint8_t*) &rx_data;
