@@ -147,9 +147,11 @@ int main(void)
 
       HAL_I2C_Mem_Read_DMA(&hi2c1, MCP9600_ADDR, MCP9600_REG_HOT_JUNCTION,
       I2C_MEMADD_SIZE_8BIT, (uint8_t*) &rx_data, 2);
-    }else
+    }
+    else
     {
       printf("DMA DONE");
+      HAL_Delay(1000);
     }
     /* USER CODE END WHILE */
 
