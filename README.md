@@ -39,7 +39,7 @@ The test connections to be made between the STM32H753ZI Nucleo-144 and MCP960 ar
        <tr>
            <td>ADR      </td>
            <td>GND      </td>
-           <td>GREY     </td>
+           <td>YELLOW   </td>
        </tr>
        <tr>
            <td>A[3:0]   </td>
