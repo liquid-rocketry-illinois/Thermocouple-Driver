@@ -6,38 +6,45 @@ The current implementation of the thermocouple driver is built to support I2C co
 
 ## Usage
 <img width="480" height="360" alt="thermocouple_driver_wiring" src="https://github.com/liquid-rocketry-illinois/Thermocouple-Driver/blob/main/imagery/thermocouple_driver_wiring.png"/> <br/>
-The connections to be made between the STM32H753ZI Nucleo-144 and MCP960 are to be made as follows: <br/>
+The test connections to be made between the STM32H753ZI Nucleo-144 and MCP960 are to be made as follows: <br/>
 <table border="1" style="border-collapse: collapse;">
    <thead>
        <tr>
-           <th>MCP9600</th>
-           <th>STM32H753ZI</th>
+           <th>MCP9600       </th>
+           <th>STM32H753ZI   </th>
+           <th>WIRE COLOR    </th>
        </tr>
    </thead>
    <tbody>
        <tr>
-           <td>VIN</td>
-           <td>3.3V</td>
+           <td>VIN      </td>
+           <td>3.3V     </td>
+           <td>RED      </td>
        </tr>
        <tr>
-           <td>GND</td>
-           <td>GND</td>
+           <td>GND      </td>
+           <td>GND      </td>
+           <td>GREY     </td>
        </tr>
        <tr>
-           <td>SCL</td>
-           <td>PB6, TX</td>
+           <td>SCL      </td>
+           <td>PB6, TX  </td>
+           <td>GREEN    </td>
        </tr>
        <tr>
-           <td>SDA</td>
-           <td>PB7, RX</td>
+           <td>SDA      </td>
+           <td>PB7, RX  </td>
+           <td>ORANGE   </td>
        </tr>
        <tr>
-           <td>ADR</td>
-           <td>GND</td>
+           <td>ADR      </td>
+           <td>GND      </td>
+           <td>GREY     </td>
        </tr>
        <tr>
-           <td>A[3:0]</td>
-           <td>NC</td>
+           <td>A[3:0]   </td>
+           <td>NC       </td>
+           <td>N/A      </td>
        </tr>
    </tbody>
 </table>
